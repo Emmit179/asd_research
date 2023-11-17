@@ -26,8 +26,8 @@ def process_comments(comments, csv_writer, indentation_level=0):
     for comment in comments:
         if isinstance(comment, praw.models.MoreComments):
             continue
-        
-        if not comment.is_root:
+
+        if comment.author and comment.author.name == "AutoModerator":
             continue
  
         csv_writer.writerow(['', '', '  ' * indentation_level + comment.body])
@@ -36,7 +36,10 @@ def process_comments(comments, csv_writer, indentation_level=0):
 
 after = None
 
-output_file = 'reddit_data.csv'
+data_folder = 'data'
+os.makedirs(data_folder, exist_ok=True)
+
+output_file = os.path.join(data_folder, 'reddit_data.csv')
 
 with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
     
