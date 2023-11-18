@@ -19,8 +19,7 @@ reddit = praw.Reddit(
 subreddit_name = 'autism'
 subreddit = reddit.subreddit(subreddit_name)
 
-num_posts_per_request = 1000  
-num_requests = 60  
+num_posts_per_request = 100
 
 def process_comments(comments, csv_writer, indentation_level=0):
     for comment in comments:
@@ -34,29 +33,37 @@ def process_comments(comments, csv_writer, indentation_level=0):
       
         process_comments(comment.replies, csv_writer, indentation_level + 1)
 
-after = None
-
 data_folder = 'data'
 os.makedirs(data_folder, exist_ok=True)
 
-output_file = os.path.join(data_folder, 'reddit_data.csv')
+output_file = os.path.join(data_folder, subreddit_name+'.csv')
+
+after = None
+old = None
 
 with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-    
     csv_writer = csv.writer(csvfile)
-
     csv_writer.writerow(['Title', 'Selftext', 'Comment'])
-    
-    for _ in range(num_requests):
-        
-        submissions = subreddit.search(query="*", sort='new', limit=num_posts_per_request, params={'after': after})
-        
+    j = 0
+
+    while True:
+        print("after id: ", after)
+
+        params = {'after': after} if after else {}
+
+        submissions = subreddit.new(limit=num_posts_per_request, params=params)
+
+        if old == after:
+            print("No more posts.")
+            break
+
+        old = after
+
         for submission in submissions:
-            
             csv_writer.writerow([submission.title, submission.selftext, ''])
-            
             process_comments(submission.comments, csv_writer)
-            
-            after = submission.name
-            
-            time.sleep(2)
+            after = submission.fullname
+
+            print("post: ", j)
+            j += 1
+            time.sleep(1)
