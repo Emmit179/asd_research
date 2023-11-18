@@ -28,8 +28,13 @@ def process_comments(comments, csv_writer, indentation_level=0):
 
         if comment.author and comment.author.name == "AutoModerator":
             continue
- 
-        csv_writer.writerow(['', '', '  ' * indentation_level + comment.body])
+
+        csv_writer.writerow([
+            '', 
+            '', 
+            '  ' * indentation_level + comment.body,
+            comment.score,
+        ])
       
         process_comments(comment.replies, csv_writer, indentation_level + 1)
 
@@ -39,11 +44,11 @@ os.makedirs(data_folder, exist_ok=True)
 output_file = os.path.join(data_folder, subreddit_name+'.csv')
 
 after = None
-old = None
+old = 1
 
 with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
     csv_writer = csv.writer(csvfile)
-    csv_writer.writerow(['Title', 'Selftext', 'Comment'])
+    csv_writer.writerow(['Title', 'Selftext', 'Comment', 'Score'])
     j = 0
 
     while True:
@@ -60,7 +65,12 @@ with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
         old = after
 
         for submission in submissions:
-            csv_writer.writerow([submission.title, submission.selftext, ''])
+            csv_writer.writerow([
+                submission.title,
+                submission.selftext,
+                '',
+                submission.score,
+            ])
             process_comments(submission.comments, csv_writer)
             after = submission.fullname
 
