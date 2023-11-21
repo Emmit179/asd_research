@@ -4,6 +4,8 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+import matplotlib.pyplot as plt
+import networkx as nx
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -36,12 +38,15 @@ def build_comment_tree(csv_reader):
         'replies': []
     }
 
-    current_submission = comment_tree
     previous_indentation = 0
 
     for row in csv_reader:
+        current_submission = comment_tree
         title, selftext, comment_text, score = row
-        indentation_level = len(comment_text) - len(comment_text.lstrip())
+        indentation_level = int(len(comment_text) - len(comment_text.lstrip(' ')) / 2)
+        
+        if title != "":
+            indentation_level += 1
 
         comment = {
             'text': preprocess_text(title) + preprocess_text(selftext) + preprocess_text(comment_text),
@@ -54,11 +59,14 @@ def build_comment_tree(csv_reader):
             current_submission = comment
         elif indentation_level > previous_indentation:
             current_submission['replies'].append(comment)
+            comment['parent'] = current_submission
             current_submission = comment
         else:
             for _ in range(previous_indentation - indentation_level + 1):
                 current_submission = current_submission.get('parent', comment_tree)
             current_submission['replies'].append(comment)
+            comment['parent'] = current_submission
+
 
         comment['parent'] = current_submission
         previous_indentation = indentation_level
@@ -72,4 +80,3 @@ with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
     csv_reader = csv.reader(csvfile)
     next(csv_reader)
     comment_tree = build_comment_tree(csv_reader)
-
