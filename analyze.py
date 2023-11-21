@@ -4,12 +4,21 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import matplotlib.pyplot as plt
-import networkx as nx
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+
+try:
+    nltk.data.find('corpora/wordnet.zip')
+except LookupError:
+    nltk.download('wordnet')
 
 def preprocess_text(text):
     text = text.lower()
@@ -80,3 +89,5 @@ with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
     csv_reader = csv.reader(csvfile)
     next(csv_reader)
     comment_tree = build_comment_tree(csv_reader)
+
+    
