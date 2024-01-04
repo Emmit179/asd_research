@@ -16,10 +16,14 @@ reddit = praw.Reddit(
     user_agent=user_agent
 )
 
-subreddit_name = 'autism'
+subreddit_name = 'Autism_Parenting'
 subreddit = reddit.subreddit(subreddit_name)
 
 num_posts_per_request = 100
+
+allowed_flairs = ['Venting/Needs Support','Advice Needed']
+
+include_comments = False
 
 def process_comments(comments, csv_writer, indentation_level=0):
     for comment in comments:
@@ -41,14 +45,16 @@ def process_comments(comments, csv_writer, indentation_level=0):
 data_folder = 'data'
 os.makedirs(data_folder, exist_ok=True)
 
-output_file = os.path.join(data_folder, subreddit_name+'.csv')
+flair_str = '_'.join(flair.replace('/', '-').replace(' ', '-') for flair in allowed_flairs)
+comments_str = 'with_comments' if include_comments else 'no_comments'
+output_file = os.path.join(data_folder, f'{subreddit_name}_{flair_str}_{comments_str}(hot).csv')
 
 after = None
 old = 1
 
 with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
     csv_writer = csv.writer(csvfile)
-    csv_writer.writerow(['Title', 'Selftext', 'Comment', 'Score'])
+    csv_writer.writerow(['Title', 'Selftext', 'Comment', 'Score', 'Timestamp'])
     j = 0
 
     while True:
@@ -56,7 +62,7 @@ with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
 
         params = {'after': after} if after else {}
 
-        submissions = subreddit.new(limit=num_posts_per_request, params=params)
+        submissions = subreddit.hot(limit=num_posts_per_request, params=params)
 
         if old == after:
             print("No more posts.")
@@ -65,15 +71,20 @@ with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
         old = after
 
         for submission in submissions:
-            csv_writer.writerow([
-                submission.title,
-                submission.selftext,
-                '',
-                submission.score,
-            ])
-            process_comments(submission.comments, csv_writer)
-            after = submission.fullname
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(submission.created_utc))
+            
+            if submission.link_flair_text and submission.link_flair_text in allowed_flairs:
+                csv_writer.writerow([
+                    submission.title,
+                    submission.selftext,
+                    '',
+                    submission.score,
+                    timestamp,
+                ])
+                if include_comments:
+                    process_comments(submission.comments, csv_writer)
+                after = submission.fullname
 
-            print("post: ", j)
-            j += 1
-            time.sleep(1)
+                print("post: ", j)
+                j += 1
+                time.sleep(1)
